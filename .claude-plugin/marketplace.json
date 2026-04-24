@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "courseagent",
+  "version": "0.1.0",
+  "description": "Claude Code marketplace for the CourseAgent learning plugin",
+  "owner": {
+    "name": "Lewis",
+    "email": "lewis@code.com"
+  },
+  "plugins": [
+    {
+      "name": "course-agent",
+      "description": "AI-powered interactive course designer and guided learning agent for Claude Code",
+      "source": "./plugins/course-agent",
+      "category": "learning",
+      "homepage": "https://github.com/zaxliu/CourseAgent/tree/main/plugins/course-agent"
+    }
+  ]
+}

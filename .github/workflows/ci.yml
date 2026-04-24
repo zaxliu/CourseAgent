@@ -12,10 +12,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate marketplace.json
+        run: |
+          echo "=== Checking marketplace.json ==="
+          cat .claude-plugin/marketplace.json | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          assert 'name' in data, 'Missing name'
+          assert 'plugins' in data and data['plugins'], 'Missing plugins'
+          plugin = data['plugins'][0]
+          assert plugin['name'] == 'course-agent', 'Unexpected plugin name'
+          assert plugin['source'] == './plugins/course-agent', 'Unexpected plugin source'
+          print(f'Marketplace: {data[\"name\"]}')
+          print(f'Plugins: {len(data[\"plugins\"])}')
+          "
+
       - name: Validate plugin.json
         run: |
           echo "=== Checking plugin.json ==="
-          cat .claude-plugin/plugin.json | python3 -c "
+          cat plugins/course-agent/.claude-plugin/plugin.json | python3 -c "
           import json, sys
           data = json.load(sys.stdin)
           assert 'name' in data, 'Missing name'
@@ -30,9 +45,9 @@ jobs:
           echo "=== Checking command files ==="
           for cmd in $(python3 -c "
           import json
-          data = json.load(open('.claude-plugin/plugin.json'))
+          data = json.load(open('plugins/course-agent/.claude-plugin/plugin.json'))
           for c in data['commands']:
-            print(c)
+            print(f'plugins/course-agent/{c[2:]}')
           "); do
             if [ ! -f "$cmd" ]; then
               echo "FAIL: $cmd not found"
@@ -44,7 +59,7 @@ jobs:
       - name: Validate command frontmatter
         run: |
           echo "=== Checking YAML frontmatter ==="
-          for f in commands/*.md; do
+          for f in plugins/course-agent/commands/*.md; do
             if ! head -1 "$f" | grep -q '^---$'; then
               echo "FAIL: $f missing YAML frontmatter"
               exit 1
@@ -60,7 +75,7 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v19
         with:
           globs: |
-            commands/*.md
+            plugins/course-agent/commands/*.md
             README.md
         continue-on-error: true
 
@@ -76,7 +91,7 @@ jobs:
       - name: Get version
         id: version
         run: |
-          VERSION=$(python3 -c "import json; print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+          VERSION=$(python3 -c "import json; print(json.load(open('plugins/course-agent/.claude-plugin/plugin.json'))['version'])")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Check if tag exists

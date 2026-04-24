@@ -1,18 +1,20 @@
 # CourseAgent
 
-> AI-powered interactive course designer and guided learning agent for Claude Code.
+> GitHub-hosted Claude Code marketplace for the CourseAgent learning plugin.
 
-CourseAgent turns any codebase into a structured multi-day course. It scans your repo, designs a syllabus, delivers guided daily lessons, and keeps a learning journal — all inside your terminal.
+CourseAgent turns any codebase into a structured multi-day course. It scans your repo, designs a syllabus, delivers guided daily lessons, and keeps a learning journal, all inside Claude Code.
+
+This repository is a Claude Code marketplace. The installable plugin name is `course-agent`, and the marketplace name is `courseagent`.
 
 ## Features
 
-- **`/CourseAgent:course-design`** — Generate or refine a `course.md` syllabus from any repo
+- **`/course-agent:course-design`** — Generate or refine a `course.md` syllabus from any repo
   - Auto-detects independent sub-modules and suggests nested sub-courses
   - Multi-language support (ask at creation time)
   - References real files in the repo + curated external links
   - Progress bar visualization in Course Overview
 
-- **`/CourseAgent:learn`** — Resume and deliver the next guided lesson
+- **`/course-agent:learn`** — Resume and deliver the next guided lesson
   - Reads all reference docs and synthesizes a structured lesson
   - Interactive Q&A during the lesson
   - `note: ...` to capture notes mid-lesson
@@ -25,10 +27,10 @@ CourseAgent turns any codebase into a structured multi-day course. It scans your
 ```
 You (in any repo)
   │
-  ├─ /CourseAgent:course-design    → scans repo → generates course.md
+  ├─ /course-agent:course-design   → scans repo → generates course.md
   │                                   stored in ~/.claude/courses/<path-id>/
   │
-  └─ /CourseAgent:learn            → reads course.md → delivers lesson
+  └─ /course-agent:learn           → reads course.md → delivers lesson
                                      tracks progress in progress.json
                                      records journal in journal.md
 ```
@@ -55,36 +57,22 @@ When a project has deep directory structure with independent modules (detected b
 ## Install
 
 ```bash
-# Clone the repo
-git clone git@github.com:zaxliu/CourseAgent.git
+# Add this GitHub repository as a Claude marketplace
+/plugin marketplace add zaxliu/CourseAgent
 
-# Symlink into Claude Code plugins
-ln -s /path/to/CourseAgent ~/.claude/plugins/CourseAgent
+# Install the plugin from that marketplace
+/plugin install course-agent@courseagent
 ```
 
-Then add to `~/.claude/settings.json`:
+After installation, the commands are available under the `course-agent` namespace.
 
-```json
-{
-  "enabledPlugins": {
-    "CourseAgent@local": true
-  }
-}
-```
+## Development Layout
 
-And to `~/.claude/plugins/installed_plugins.json` (inside the `"plugins"` object):
-
-```json
-"CourseAgent@local": [
-  {
-    "scope": "project",
-    "installPath": "/path/to/CourseAgent",
-    "version": "0.1.0",
-    "installedAt": "2026-04-24T00:00:00.000Z",
-    "lastUpdated": "2026-04-24T00:00:00.000Z",
-    "projectPath": "/Users/you"
-  }
-]
+```text
+.claude-plugin/marketplace.json
+plugins/course-agent/.claude-plugin/plugin.json
+plugins/course-agent/commands/course-design.md
+plugins/course-agent/commands/learn.md
 ```
 
 ## Usage
@@ -95,10 +83,10 @@ cd ~/projects/myapp
 
 # Design a course for this repo
 # (asks language, audience, detects sub-modules)
-/CourseAgent:course-design
+/course-agent:course-design
 
 # Start learning
-/CourseAgent:learn
+/course-agent:learn
 
 # During a lesson:
 note: this pattern is similar to the observer pattern

@@ -1,9 +1,9 @@
 {
-  "name": "CourseAgent",
+  "name": "course-agent",
   "version": "0.1.0",
   "description": "AI-powered interactive course designer and guided learning agent with auto-memory",
   "author": {
-    "name": "lewis"
+    "name": "Lewis"
   },
   "commands": [
     "./commands/course-design.md",
