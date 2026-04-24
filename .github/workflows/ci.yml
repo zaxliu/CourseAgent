@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate plugin.json
+        run: |
+          echo "=== Checking plugin.json ==="
+          cat .claude-plugin/plugin.json | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          assert 'name' in data, 'Missing name'
+          assert 'version' in data, 'Missing version'
+          assert 'commands' in data, 'Missing commands'
+          print(f'Plugin: {data[\"name\"]} v{data[\"version\"]}')
+          print(f'Commands: {len(data[\"commands\"])}')
+          "
+
+      - name: Validate command files exist
+        run: |
+          echo "=== Checking command files ==="
+          for cmd in $(python3 -c "
+          import json
+          data = json.load(open('.claude-plugin/plugin.json'))
+          for c in data['commands']:
+            print(c)
+          "); do
+            if [ ! -f "$cmd" ]; then
+              echo "FAIL: $cmd not found"
+              exit 1
+            fi
+            echo "OK: $cmd"
+          done
+
+      - name: Validate command frontmatter
+        run: |
+          echo "=== Checking YAML frontmatter ==="
+          for f in commands/*.md; do
+            if ! head -1 "$f" | grep -q '^---$'; then
+              echo "FAIL: $f missing YAML frontmatter"
+              exit 1
+            fi
+            if ! grep -q '^description:' "$f"; then
+              echo "FAIL: $f missing description in frontmatter"
+              exit 1
+            fi
+            echo "OK: $f"
+          done
+
+      - name: Lint markdown
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: |
+            commands/*.md
+            README.md
+        continue-on-error: true
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
