@@ -18,6 +18,105 @@ Find `course.md` in the current repo, read progress state, then read all referen
 6. **Sub-path**: Read `<!-- sub_path: ... -->` from `course.md` metadata. If present, resolve reference paths relative to `<project_root>/<sub_path>/`. Otherwise resolve relative to project root.
 7. **Progress file**: `~/.claude/courses/<course-id>/progress.json`
 8. **Journal file**: `~/.claude/courses/<course-id>/journal.md`
+9. **Profile files**:
+   - Global profile: `~/.claude/courses/profile.md`
+   - Project profile: `~/.claude/courses/<course-id>/profile.md`
+
+## User Profile
+
+At startup, after resolving the course ID and before delivering a lesson:
+
+1. Read the global profile if it exists: `~/.claude/courses/profile.md`
+2. Read the project profile if it exists: `~/.claude/courses/<course-id>/profile.md`
+3. Merge them for the current session. The project profile is an overlay on the global profile and should override conflicting global preferences for this course only.
+4. Adapt the lesson style using the effective profile: language fallback, explanation depth, pace, examples, assumed background knowledge, topics to emphasize, and exercise style.
+
+Profile files are plain Markdown so the user can inspect and edit them directly. Expected structure:
+
+```markdown
+# CourseAgent User Profile
+
+## Knowledge Background
+- Programming languages:
+- Frameworks/tools:
+- Domain knowledge:
+- Current weak spots:
+
+## Learning Preferences
+- Preferred language:
+- Explanation depth:
+- Preferred examples:
+- Pace:
+- Exercise style:
+
+## Course Design Preferences
+- Default audience level:
+- Default course length:
+- Preferred scope:
+- Topics to emphasize:
+- Topics to avoid or keep brief:
+
+## Interaction Preferences
+- Likes:
+- Dislikes:
+- Feedback signals:
+
+## Last Updated
+YYYY-MM-DD
+```
+
+If no profile exists, behave exactly as before.
+
+### Profile Display Commands
+
+During a lesson or at startup:
+
+- **`profile`**: Show the effective merged profile, noting that project profile values override global values.
+- **`profile global`**: Show only `~/.claude/courses/profile.md`. If it does not exist, say so.
+- **`profile project`**: Show only `~/.claude/courses/<course-id>/profile.md`. If it does not exist, say so.
+
+After showing profile content, continue the lesson normally.
+
+### Profile Update Flow
+
+When the user gives meaningful feedback that implies a durable learning preference or background fact, propose a profile update before writing anything. Examples:
+
+- "讲慢一点"
+- "以后多给代码例子"
+- "我已经熟悉 React，不用基础介绍"
+- "这个课程偏理论了，下次多给练习"
+
+Only store stable preferences or background facts likely to help future courses. Never store raw conversation transcripts. Do not store sensitive personal information unless the user explicitly asks.
+
+Prefer updating the global profile for stable cross-project facts. Prefer updating the project profile for repo-specific goals or temporary context. If unsure whether a fact is global or project-specific, propose a project profile update by default.
+
+Use this confirmation format:
+
+```text
+I can update your learning profile:
+
+Global profile:
+- Explanation depth: concise fundamentals, then code examples
+- Existing React basics should be treated as known
+
+Apply this update? yes/no/edit
+```
+
+- If the user says `yes`, write the proposed change to the relevant profile file and update `## Last Updated` to today's date in `YYYY-MM-DD`.
+- If the user says `no`, do not write anything and continue normally.
+- If the user says `edit`, ask for the revised wording, then write only the revised wording after the user provides it.
+
+### Forget Flow
+
+When the user says **`forget <topic>`**:
+
+1. Search the global and project profiles for matching facts or preferences.
+2. Propose the removal before writing anything.
+3. Ask for confirmation with `yes/no/edit`.
+4. Only remove or revise profile content after confirmation.
+5. Update `## Last Updated` whenever a profile file changes.
+
+Do not delete journal entries from `journal.md` during forget flow unless the user explicitly asks for journal edits.
 
 ## Journal System
 
@@ -55,6 +154,7 @@ The learning journal is a Markdown file that records each day's notes, Q&A, take
 - Key Q&A: max 3 entries per day. Pick the most substantive exchanges, skip trivial ones.
 - Session Summary: max 3 bullets per day.
 - **Do NOT save lesson content, Q&A, notes, or takeaways to Claude's auto memory system.** All learning-related persistence goes exclusively into the journal file. The auto memory system is for user preferences and project context — not for course content.
+- **Journal behavior remains unchanged by profiles.** Lesson notes, Q&A, takeaways, and summaries still go only to `journal.md`; durable preferences and background facts go only to confirmed profile updates.
 
 ## Detecting Course Structure
 
@@ -84,6 +184,8 @@ Do NOT hardcode the day range — derive it dynamically from the file.
    - Continue asking questions about the lesson
    - Use `note: <text>` to save notes
    - Use `review` to browse past journal entries
+   - Use `profile`, `profile global`, or `profile project` to inspect profile context
+   - Use `forget <topic>` to remove confirmed profile facts
    - Say `done` when ready to advance
 9. **Advance flow** — triggered when the user signals completion via ANY of these (case-insensitive): "done", "完成", "next", "下一课", "下一天", "finish", "finished". ALL of these keywords trigger the SAME full flow below — no shortcut, no skipping the journal:
    a. Ask: "Any key takeaways from today? (type them or say 'skip')"
@@ -139,6 +241,8 @@ Courses for current project:
 - Keep each section concise but substantive — the learner should understand the concept after reading your output without needing to open the source files.
 - Include real examples from the repo (file paths, code snippets, config excerpts) to make concepts concrete.
 - End with a hands-on exercise derived from the day's `**Goal:**` line.
+- Use the effective merged profile to adapt teaching style, but do not let it override direct user requests in the current conversation.
+- Do not infer or write profile changes without the confirmation flow.
 - **Do NOT auto-advance progress.** Only trigger the advance flow when the user explicitly signals completion (e.g., "done", "完成", "next", "下一课", "下一天", "finish"). ALL of these must go through the full advance flow (takeaway prompt → auto Q&A → auto summary → journal write → progress update). Never skip the journal step.
 - If the saved day is outside the valid range, re-ask and overwrite the invalid state.
 

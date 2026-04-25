@@ -18,6 +18,63 @@ Generate a new `course.md` or evolve an existing one as a structured multi-day c
 
 ---
 
+## User Profile
+
+Before asking course creation questions or editing an existing course:
+
+1. Resolve the course ID using the Path Resolution rule above.
+2. Read the global profile if it exists: `~/.claude/courses/profile.md`
+3. Read the project profile if it exists: `~/.claude/courses/<course-id>/profile.md`
+4. Combine them for decision-making. The project profile is an overlay on the global profile and should override conflicting global preferences for this course only.
+5. Use the effective profile to choose or recommend defaults for language, audience, length, scope, topic emphasis, topic ordering, and exercise style.
+
+Profile files are plain Markdown so the user can inspect and edit them directly. Expected structure:
+
+```markdown
+# CourseAgent User Profile
+
+## Knowledge Background
+- Programming languages:
+- Frameworks/tools:
+- Domain knowledge:
+- Current weak spots:
+
+## Learning Preferences
+- Preferred language:
+- Explanation depth:
+- Preferred examples:
+- Pace:
+- Exercise style:
+
+## Course Design Preferences
+- Default audience level:
+- Default course length:
+- Preferred scope:
+- Topics to emphasize:
+- Topics to avoid or keep brief:
+
+## Interaction Preferences
+- Likes:
+- Dislikes:
+- Feedback signals:
+
+## Last Updated
+YYYY-MM-DD
+```
+
+Profile guidance is advisory. Do not silently override direct user arguments: `$ARGUMENTS` and explicit answers always win over profile-derived defaults.
+
+If profile data influences the normal question round, show the recommendation first:
+
+```text
+Based on your profile, I recommend:
+- Language: zh-CN
+- Audience: intermediate
+- Style: repo-first explanations with hands-on exercises
+```
+
+If no profile exists, behave exactly as before.
+
 ## Create Mode (no `course.md` found)
 
 ### Step 0 — Language selection
@@ -27,7 +84,7 @@ Ask the user to choose the course language using AskUserQuestion:
 - **English (en)**
 - Other (user specifies)
 
-If the user provides the language in `$ARGUMENTS`, skip this question.
+If the effective profile includes a preferred language, use it as the recommended option. If the user provides the language in `$ARGUMENTS`, skip this question.
 
 ### Step 1 — Understand the repo and domain
 
@@ -66,6 +123,8 @@ Ask up to 3 focused questions to determine:
 - **Audience**: Who is this course for? (beginner / intermediate / advanced)
 - **Scope**: Full repo coverage or a specific subset?
 - **Length**: How many days? (suggest a default based on the repo's complexity)
+
+Use the effective profile to prefill recommendations for these questions. For example, if the profile says the learner prefers concise, hands-on backend architecture courses, recommend that scope and style while still allowing the user to choose differently.
 
 If the user gives enough context upfront (e.g., via `$ARGUMENTS`), skip the questions and proceed.
 
@@ -166,6 +225,7 @@ After writing, output a brief summary: number of days, topic flow, and which pha
 
 - Treat this as a course-authoring workflow, not a learner assistant.
 - Keep `/course-design` separate from `/learn`; do not read or modify any progress files.
+- Read profile files only for stable preferences and background context. Do not write profile updates from `/course-design`.
 - Preserve these conventions in `course.md` unless explicitly changed:
   - `## Day N · Title`
   - `**Topic:**`
