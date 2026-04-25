@@ -1,0 +1,7 @@
+interface:
+  display_name: "Learn Course"
+  short_description: "Resume guided lessons from course.md"
+  default_prompt: "Use $learn-course to continue the next lesson for this repository."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Course Design"
+  short_description: "Design repo-specific learning courses"
+  default_prompt: "Use $course-design to create a structured course for this repository."
+
+policy:
+  allow_implicit_invocation: true

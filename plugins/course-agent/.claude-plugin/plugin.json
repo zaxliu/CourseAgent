@@ -1,6 +1,6 @@
 {
   "name": "course-agent",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "AI-powered interactive course designer and guided learning agent with auto-memory",
   "author": {
     "name": "Lewis"

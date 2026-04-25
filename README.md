@@ -1,10 +1,13 @@
 # CourseAgent
 
-> GitHub-hosted Claude Code marketplace for the CourseAgent learning plugin.
+> GitHub-hosted CourseAgent learning plugin for Claude Code, with Codex skill adapters.
 
-CourseAgent turns any codebase into a structured multi-day course. It scans your repo, designs a syllabus, delivers guided daily lessons, and keeps a learning journal, all inside Claude Code.
+CourseAgent turns any codebase into a structured multi-day course. It scans your repo, designs a syllabus, delivers guided daily lessons, and keeps a learning journal.
 
-This repository is a Claude Code marketplace. The installable plugin name is `course-agent`, and the marketplace name is `courseagent`.
+This repository ships in two forms:
+
+- Claude Code marketplace plugin: `course-agent` from marketplace `courseagent`
+- Codex skills: `course-design` and `learn-course` under `codex-skills/`
 
 ## Features
 
@@ -29,20 +32,24 @@ This repository is a Claude Code marketplace. The installable plugin name is `co
 ```
 You (in any repo)
   │
-  ├─ /course-agent:course-design   → scans repo → generates course.md
-  │                                   stored in ~/.claude/courses/<path-id>/
+  ├─ course-design                 → scans repo → generates course.md
+  │                                   stored in ~/.claude/courses/<path-id>/ for Claude Code
+  │                                   or ~/.codex/courses/<path-id>/ for Codex
   │
-  └─ /course-agent:learn           → reads course.md → delivers lesson
+  └─ learn                         → reads course.md → delivers lesson
                                      tracks progress in progress.json
                                      records journal in journal.md
 ```
 
 ### Course Storage
 
-All course data lives under `~/.claude/courses/`, keyed by the **absolute path** of the project directory:
+Course data is keyed by the **absolute path** of the project directory:
+
+- Claude Code plugin: `~/.claude/courses/`
+- Codex skills: `~/.codex/courses/`
 
 ```
-~/.claude/courses/
+~/.claude/courses/ or ~/.codex/courses/
   profile.md        # optional global learning profile
   Users--lewis--projects--myapp/
     course.md        # syllabus
@@ -61,7 +68,9 @@ CourseAgent can use an optional Markdown profile to remember stable preferences 
 - Global profile: `~/.claude/courses/profile.md`
 - Project overlay: `~/.claude/courses/<course-id>/profile.md`
 
-`course-design` reads the effective profile before recommending language, audience, length, scope, and topic emphasis. `learn` reads it before teaching and adapts explanation depth, pace, examples, and assumed background knowledge. Explicit command arguments and direct answers always take precedence.
+Codex uses the equivalent paths under `~/.codex/courses/`.
+
+`course-design` reads the effective profile before recommending language, audience, length, scope, and topic emphasis. `learn` / `learn-course` reads it before teaching and adapts explanation depth, pace, examples, and assumed background knowledge. Explicit command arguments and direct answers always take precedence.
 
 During lessons, feedback such as "讲慢一点", "以后多给代码例子", or "I already know React basics" can trigger a proposed profile update. CourseAgent asks for `yes/no/edit` confirmation before writing, and `forget <topic>` uses the same confirmation flow before removing profile facts. Journal behavior is unchanged: notes, Q&A, takeaways, and lesson summaries still go to `journal.md`.
 
@@ -69,7 +78,7 @@ During lessons, feedback such as "讲慢一点", "以后多给代码例子", or 
 
 When a project has deep directory structure with independent modules (detected by `README.md`, `package.json`, `pyproject.toml`, etc.), CourseAgent suggests creating sub-courses. Each sub-course has its own syllabus, progress, and journal.
 
-## Install
+## Install Claude Code Plugin
 
 ```bash
 # Add this GitHub repository as a Claude marketplace
@@ -81,6 +90,26 @@ When a project has deep directory structure with independent modules (detected b
 
 After installation, the commands are available under the `course-agent` namespace.
 
+## Install Codex Skills
+
+Codex does not install Claude Code marketplace plugins directly. Use the Codex skill adapters instead:
+
+```bash
+# From this repository checkout
+mkdir -p ~/.codex/skills
+cp -R codex-skills/course-design ~/.codex/skills/
+cp -R codex-skills/learn-course ~/.codex/skills/
+```
+
+After installation, ask Codex to use the skills by name:
+
+```text
+Use the course-design skill to create a course for this repo.
+Use the learn-course skill to continue the next lesson.
+```
+
+The Codex skills store courses, progress, journals, and profiles under `~/.codex/courses/`.
+
 ## Development Layout
 
 ```text
@@ -88,9 +117,11 @@ After installation, the commands are available under the `course-agent` namespac
 plugins/course-agent/.claude-plugin/plugin.json
 plugins/course-agent/commands/course-design.md
 plugins/course-agent/commands/learn.md
+codex-skills/course-design/SKILL.md
+codex-skills/learn-course/SKILL.md
 ```
 
-## Usage
+## Claude Code Usage
 
 ```bash
 # In any project directory:
@@ -113,6 +144,20 @@ profile                 # show merged profile context
 profile global          # show ~/.claude/courses/profile.md
 profile project         # show this course's profile.md
 forget React basics     # propose removing matching profile facts
+```
+
+## Codex Usage
+
+In any project directory, ask Codex:
+
+```text
+Use the course-design skill to design a course for this repo.
+Use the learn-course skill to start learning.
+note: this pattern is similar to the observer pattern
+done
+review
+profile global
+forget React basics
 ```
 
 ## Course Format
