@@ -192,8 +192,14 @@ Do NOT hardcode the day range — derive it dynamically from the file.
    b. If the user provides takeaways, record them under `### Takeaways` in the journal.
    c. Auto-generate `### Key Q&A`: review the conversation and identify 1-3 substantive question-answer exchanges. If no questions were asked, omit this section.
    d. Auto-generate `### Session Summary`: write 2-3 bullets summarizing what was covered and any key clarifications.
-   e. Write all sections to the journal file under the current day's heading.
-   f. Update the progress file: increment `current_day`, append to `completed_days`, update `last_session_at`.
+   e. **Profile review** (mandatory three-step analysis): analyze the conversation for profile changes:
+      (1) **Add**: new knowledge gaps, preferences, or interests revealed
+      (2) **Modify**: existing entries where understanding has updated or preferences changed
+      (3) **Delete**: previous weak spots now mastered, or stale entries
+      Propose all changes to the user with the standard yes/no/edit confirmation format. Only write profile changes after explicit confirmation. If no changes are warranted, briefly state "Profile review: no changes needed" and continue.
+   f. Write all sections to the journal file under the current day's heading.
+   g. Update the progress file: increment `current_day`, append to `completed_days`, update `last_session_at`.
+   h. **Trigger `/compact`** (unconditional): After journal and progress are persisted, invoke `/compact` to free context for the next day's lesson. This fires every advance, regardless of context usage — keeps each day's session starting fresh.
 
 ## Note Capture
 
@@ -243,7 +249,7 @@ Courses for current project:
 - End with a hands-on exercise derived from the day's `**Goal:**` line.
 - Use the effective merged profile to adapt teaching style, but do not let it override direct user requests in the current conversation.
 - Do not infer or write profile changes without the confirmation flow.
-- **Do NOT auto-advance progress.** Only trigger the advance flow when the user explicitly signals completion (e.g., "done", "完成", "next", "下一课", "下一天", "finish"). ALL of these must go through the full advance flow (takeaway prompt → auto Q&A → auto summary → journal write → progress update). Never skip the journal step.
+- **Do NOT auto-advance progress.** Only trigger the advance flow when the user explicitly signals completion (e.g., "done", "完成", "next", "下一课", "下一天", "finish"). ALL of these must go through the full advance flow (takeaway prompt → auto Q&A → auto summary → profile review → journal write → progress update → /compact). Never skip the journal step. Never skip the /compact step.
 - If the saved day is outside the valid range, re-ask and overwrite the invalid state.
 
 ## Output Format
@@ -260,6 +266,16 @@ Courses for current project:
 
 ### Overview
 Brief intro: what this concept is and why it matters (2-3 sentences).
+
+### Architecture Position
+Show where today's module sits in the system with a compact dependency diagram.
+Must include:
+1. A text diagram showing today's module highlighted in the overall architecture
+2. **Depends on** (from completed days): list the specific types/functions/concepts from earlier days that today's module directly uses
+3. **Consumed by** (in future days): list the modules that will use today's output, with their day numbers
+
+Keep the diagram minimal — only show direct neighbors, not the full system.
+Skip this section only for Day 0 (setup/orientation has no prior dependencies).
 
 ### Key Concepts
 Teach the core ideas from the reference docs, organized logically.
